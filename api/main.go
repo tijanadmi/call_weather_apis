@@ -104,23 +104,31 @@ func main() {
 		return
 	}
 
+	_, err = db.Exec("DELETE FROM  dwh_weather_forecast")
+	if err != nil {
+		fmt.Println(".....Error Deliting data")
+		fmt.Println(err)
+		return
+	}
+
 	// Create statement
 	stmt, err := db.Prepare(`SELECT
 									NAME,
 									LATITUDE,
 									LONGITUDE,
-									API_KEY
+									API_KEY,
+									ASL
 								FROM
 									DWH_WEATHER_POINTS`)
 	if err != nil {
-		panic(err)
+		panic("db.Prepare")
 	}
 	defer stmt.Close()
 
 	// Execute statement
 	rows, err := stmt.Query()
 	if err != nil {
-		panic(err)
+		panic("stmt.Query")
 	}
 
 	// Iterate over results
@@ -131,21 +139,21 @@ func main() {
 			LATITUDE  string
 			LONGITUDE string
 			API_KEY   string
+			ASL       string
 		)
 
 		// Scan columns
 		err = rows.Scan(&NAME,
 			&LATITUDE,
 			&LONGITUDE,
-			&API_KEY)
+			&API_KEY,
+			&ASL)
 		if err != nil {
-			panic(err)
+			panic("rows.Scan")
 		}
 
 		url := "https://my.meteoblue.com/packages/basic-day?apikey=" + API_KEY + "&name=" + NAME + "&lat=" + LATITUDE + "&lon=" + LONGITUDE +
-			"&asl=120&format=json&tz=Europe%2FBelgrade&history_days=1&forecast_days=1"
-
-		/*url := fmt.Sprintf("https://my.meteoblue.com/packages/basic-day?apikey=%s&name=%s&lat=%s&lon=%s&asl=120&format=json&tz=Europe%2FBelgrade&history_days=1&forecast_days=1", API_KEY, NAME, LATITUDE, LONGITUDE)*/
+			"&asl=" + ASL + "&format=json&tz=Europe%2FBelgrade&history_days=1&forecast_days=7"
 
 		req, _ := http.NewRequest("GET", url, nil)
 		res, err := http.DefaultClient.Do(req)
@@ -177,6 +185,22 @@ func main() {
 			fmt.Println(".....Error Inserting data")
 			fmt.Println(err)
 			return
+		}
+		/*fmt.Println("Uspesan insert za " + NAME)*/
+
+		for i := 1; i <= 7; i++ {
+			_, err = db.Exec("INSERT INTO dwh_weather_forecast VALUES(:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,:27,:28,:29,:30,:31,:32,:33,:34,:35)",
+				data.Metadata.Name, data.Metadata.Latitude, data.Metadata.Longitude, data.Metadata.Height, data.Metadata.TimezoneAbbrevation, data.Metadata.UtcTimeoffset, data.Metadata.ModelrunUtc, data.Metadata.ModelrunUpdatetimeUtc,
+				data.DataDay.Time[i], data.DataDay.Pictocode[i], data.DataDay.Uvindex[i], data.DataDay.TemperatureMax[i], data.DataDay.TemperatureMin[i], data.DataDay.TemperatureMean[i], data.DataDay.FelttemperatureMax[i], data.DataDay.FelttemperatureMin[i],
+				data.DataDay.Winddirection[i], data.DataDay.PrecipitationProbability[i], data.DataDay.Rainspot[i], data.DataDay.PredictabilityClass[i], data.DataDay.Predictability[i], data.DataDay.Precipitation[i], data.DataDay.Snowfraction[i], data.DataDay.SealevelpressureMax[i],
+				data.DataDay.SealevelpressureMin[i], data.DataDay.SealevelpressureMean[i], data.DataDay.WindspeedMax[i], data.DataDay.WindspeedMean[i], data.DataDay.WindspeedMin[i], data.DataDay.RelativehumidityMax[i], data.DataDay.RelativehumidityMin[i], data.DataDay.RelativehumidityMean[i],
+				data.DataDay.ConvectivePrecipitation[i], data.DataDay.PrecipitationHours[i], data.DataDay.Humiditygreater90Hours[i])
+			if err != nil {
+				fmt.Println(".....Error Inserting data")
+				fmt.Println(err)
+				return
+			}
+			/*fmt.Println("Uspesan insert za " + NAME + " za dan " + strconv.Itoa(i))*/
 		}
 
 	}
