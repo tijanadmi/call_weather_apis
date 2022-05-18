@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/godror/godror"
 	"github.com/joho/godotenv"
@@ -70,21 +71,25 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	user := os.Getenv("USER")
 	if user == "" {
 		fmt.Println(err)
+		return
 	}
 
 	pass := os.Getenv("PASS")
 	if pass == "" {
 		fmt.Println(err)
+		return
 	}
 
 	host := os.Getenv("HOST")
 	if host == "" {
 		fmt.Println(err)
+		return
 	}
 	/// new part stop
 
@@ -131,6 +136,8 @@ func main() {
 		panic("stmt.Query")
 	}
 
+	defer rows.Close()
+
 	// Iterate over results
 	for rows.Next() {
 		// Define columns
@@ -175,12 +182,14 @@ func main() {
 			fmt.Println("Error Unmarshal")
 			panic(err)
 		}
-		_, err = db.Exec("INSERT INTO dwh_weather VALUES(:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,:27,:28,:29,:30,:31,:32,:33,:34,:35)",
+
+		currentTime := time.Now().Format("2006-01-02 15:04:05")
+		_, err = db.Exec("INSERT INTO dwh_weather VALUES(:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,:27,:28,:29,:30,:31,:32,:33,:34,:35,:36)",
 			data.Metadata.Name, data.Metadata.Latitude, data.Metadata.Longitude, data.Metadata.Height, data.Metadata.TimezoneAbbrevation, data.Metadata.UtcTimeoffset, data.Metadata.ModelrunUtc, data.Metadata.ModelrunUpdatetimeUtc,
 			data.DataDay.Time[0], data.DataDay.Pictocode[0], data.DataDay.Uvindex[0], data.DataDay.TemperatureMax[0], data.DataDay.TemperatureMin[0], data.DataDay.TemperatureMean[0], data.DataDay.FelttemperatureMax[0], data.DataDay.FelttemperatureMin[0],
 			data.DataDay.Winddirection[0], data.DataDay.PrecipitationProbability[0], data.DataDay.Rainspot[0], data.DataDay.PredictabilityClass[0], data.DataDay.Predictability[0], data.DataDay.Precipitation[0], data.DataDay.Snowfraction[0], data.DataDay.SealevelpressureMax[0],
 			data.DataDay.SealevelpressureMin[0], data.DataDay.SealevelpressureMean[0], data.DataDay.WindspeedMax[0], data.DataDay.WindspeedMean[0], data.DataDay.WindspeedMin[0], data.DataDay.RelativehumidityMax[0], data.DataDay.RelativehumidityMin[0], data.DataDay.RelativehumidityMean[0],
-			data.DataDay.ConvectivePrecipitation[0], data.DataDay.PrecipitationHours[0], data.DataDay.Humiditygreater90Hours[0])
+			data.DataDay.ConvectivePrecipitation[0], data.DataDay.PrecipitationHours[0], data.DataDay.Humiditygreater90Hours[0], currentTime)
 		if err != nil {
 			fmt.Println(".....Error Inserting data")
 			fmt.Println(err)
@@ -189,12 +198,12 @@ func main() {
 		/*fmt.Println("Uspesan insert za " + NAME)*/
 
 		for i := 1; i <= 7; i++ {
-			_, err = db.Exec("INSERT INTO dwh_weather_forecast VALUES(:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,:27,:28,:29,:30,:31,:32,:33,:34,:35)",
+			_, err = db.Exec("INSERT INTO dwh_weather_forecast VALUES(:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18,:19,:20,:21,:22,:23,:24,:25,:26,:27,:28,:29,:30,:31,:32,:33,:34,:35,:36)",
 				data.Metadata.Name, data.Metadata.Latitude, data.Metadata.Longitude, data.Metadata.Height, data.Metadata.TimezoneAbbrevation, data.Metadata.UtcTimeoffset, data.Metadata.ModelrunUtc, data.Metadata.ModelrunUpdatetimeUtc,
 				data.DataDay.Time[i], data.DataDay.Pictocode[i], data.DataDay.Uvindex[i], data.DataDay.TemperatureMax[i], data.DataDay.TemperatureMin[i], data.DataDay.TemperatureMean[i], data.DataDay.FelttemperatureMax[i], data.DataDay.FelttemperatureMin[i],
 				data.DataDay.Winddirection[i], data.DataDay.PrecipitationProbability[i], data.DataDay.Rainspot[i], data.DataDay.PredictabilityClass[i], data.DataDay.Predictability[i], data.DataDay.Precipitation[i], data.DataDay.Snowfraction[i], data.DataDay.SealevelpressureMax[i],
 				data.DataDay.SealevelpressureMin[i], data.DataDay.SealevelpressureMean[i], data.DataDay.WindspeedMax[i], data.DataDay.WindspeedMean[i], data.DataDay.WindspeedMin[i], data.DataDay.RelativehumidityMax[i], data.DataDay.RelativehumidityMin[i], data.DataDay.RelativehumidityMean[i],
-				data.DataDay.ConvectivePrecipitation[i], data.DataDay.PrecipitationHours[i], data.DataDay.Humiditygreater90Hours[i])
+				data.DataDay.ConvectivePrecipitation[i], data.DataDay.PrecipitationHours[i], data.DataDay.Humiditygreater90Hours[i], currentTime)
 			if err != nil {
 				fmt.Println(".....Error Inserting data")
 				fmt.Println(err)
